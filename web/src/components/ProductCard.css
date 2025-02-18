@@ -1,0 +1,87 @@
+.product-card {
+    width: 18%;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.product-image {
+    width: 100%;
+    border-radius: 8px;
+}
+
+.product-name {
+    font-size: 1.2rem;
+    margin: 10px 0;
+}
+
+.product-description {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.product-price {
+    font-weight: bold;
+    color: #333;
+}
+
+.product-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+}
+
+.add-to-cart-button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.add-to-cart-button:hover {
+    background-color: #218838;
+}
+
+.edit-product-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-top: 10px;
+    margin-right: 5px;
+    width: 45%;
+}
+
+.edit-product-button:hover {
+    background-color: #0056b3;
+}
+
+.delete-product-button {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-top: 10px;
+    width: 45%;
+}
+
+.delete-product-button:hover {
+    background-color: #c82333;
+}
+
+.product-card > .edit-product-button,
+.product-card > .delete-product-button {
+    display: inline-block;
+}
+
+

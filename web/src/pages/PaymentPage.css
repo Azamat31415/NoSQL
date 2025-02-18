@@ -1,0 +1,103 @@
+.payment-page {
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.user-address {
+    margin-bottom: 20px;
+}
+
+.selected-items {
+    margin-bottom: 30px;
+}
+
+.product-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.product-card {
+    width: 200px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: center;
+}
+
+.delivery-method,
+.payment-method {
+    margin-bottom: 30px;
+}
+
+.delivery-option {
+    margin-bottom: 10px;
+}
+
+.payment-option {
+    display: inline-block;
+    padding: 10px 20px;
+    margin-right: 10px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    text-align: center;
+    background-color: #f0f0f0;
+}
+
+.payment-option.selected {
+    background-color: #ffffff;
+    border: 1px solid #4caf50;
+}
+
+.card-details {
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    padding: 20px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.card-details input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.card-details input:focus {
+    border-color: #4caf50;
+}
+
+.card-details .input-group {
+    display: flex;
+    gap: 10px;
+}
+
+.card-details .input-group input {
+    flex: 1;
+    padding: 10px;
+    font-size: 16px;
+}
+
+.card-details .input-group .short-input {
+    width: 120px;
+}
+
+.order-button,
+.back-button {
+    padding: 10px 20px;
+    border: none;
+    background-color: #4caf50;
+    color: white;
+    cursor: pointer;
+}
+
+.order-button {
+    margin-right: 10px;
+}
+
+.back-button {
+    background-color: #f44336;
+}

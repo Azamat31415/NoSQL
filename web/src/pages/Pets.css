@@ -1,0 +1,200 @@
+.pets-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.pet-card {
+    background-color: #f8f9fa;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    padding: 15px;
+    width: 250px;
+    text-align: center;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease-in-out;
+}
+
+.pet-card:hover {
+    transform: scale(1.05);
+}
+
+.pet-card h4 {
+    margin: 0;
+    font-size: 1.4em;
+    color: #333;
+}
+
+.pet-card p {
+    margin: 8px 0;
+    font-size: 1em;
+    color: #555;
+}
+
+.edit-pet-button, .delete-pet-button {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background 0.2s ease-in-out;
+}
+
+.edit-pet-button {
+    background-color: #007bff;
+    color: white;
+}
+
+.edit-pet-button:hover {
+    background-color: #0056b3;
+}
+
+.delete-pet-button {
+    background-color: #dc3545;
+    color: white;
+    margin-left: 10px;
+}
+
+.delete-pet-button:hover {
+    background-color: #a71d2a;
+}
+
+.add-pet-container {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.add-pet-button {
+    background-color: #28a745;
+    color: white;
+    font-size: 1.1em;
+    padding: 12px 18px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease-in-out;
+}
+
+.add-pet-button:hover {
+    background-color: #1e7e34;
+}
+
+.add-pet-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.add-pet-form label {
+    font-size: 1.1em;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.add-pet-form input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1em;
+}
+
+.add-pet-form button {
+    margin-top: 10px;
+}
+
+.pets-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px; /* Отступы между карточками */
+    justify-content: center;
+}
+
+.pet-card {
+    background-color: #f8f9fa;
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 200px;
+    text-align: center;
+}
+
+.add-pet-button {
+    margin-bottom: 20px;
+}
+
+.edit-pet-container {
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.edit-pet-container h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.edit-pet-form label {
+    display: block;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.edit-pet-form input,
+.edit-pet-form select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.edit-pet-form button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 15px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.edit-pet-form button:hover {
+    background: #0056b3;
+}
+
+.admin-panel-button {
+    background-color: grey;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin: 10px 0;
+}
+
+.admin-panel-button:hover {
+    background-color: dimgrey;
+    transform: scale(1.05);
+}
+
+.admin-panel-button:active {
+    background-color: #3e8e41;
+}
+
+

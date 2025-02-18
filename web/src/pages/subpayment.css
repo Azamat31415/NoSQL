@@ -1,0 +1,89 @@
+.subpayment {
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 20px;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+h2 {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+p {
+    font-size: 18px;
+    font-weight: bold;
+    color: #555;
+}
+
+.payment-method {
+    margin: 20px 0;
+}
+
+.payment-option {
+    padding: 12px;
+    margin: 5px;
+    border-radius: 8px;
+    background-color: #e0e0e0;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s ease-in-out;
+}
+
+.payment-option.selected {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.card-details {
+    margin-top: 15px;
+}
+
+.card-details input {
+    display: block;
+    width: 95%;
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+}
+
+.short-input {
+    width: 48%;
+    display: inline-block;
+}
+
+.pay-button, .back-button {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    margin-top: 15px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s ease-in-out;
+}
+
+.pay-button {
+    background-color: #28a745;
+    color: white;
+}
+
+.pay-button:hover {
+    background-color: #218838;
+}
+
+.back-button {
+    background-color: #dc3545;
+    color: white;
+}
+
+.back-button:hover {
+    background-color: #c82333;
+}
