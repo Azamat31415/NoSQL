@@ -29,6 +29,7 @@ const CartPage = () => {
             if (!response.ok) throw new Error("Failed to fetch cart items");
 
             const data = await response.json();
+            console.log("Cart items received from API:", data); // ✅ Проверяем, что приходит
             setCart(data || []);
         } catch (error) {
             console.error("Error fetching cart:", error);

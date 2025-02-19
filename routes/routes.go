@@ -2,7 +2,7 @@ package routes
 
 import (
 	"GoProject/handlers/auth"
-	//"GoProject/handlers/cart"
+	"GoProject/handlers/cart"
 	//"GoProject/handlers/order"
 	//"GoProject/handlers/personal_pet"
 	"GoProject/handlers/product"
@@ -74,9 +74,9 @@ func InitializeRoutes(r *chi.Mux, db *mongo.Database) {
 	//r.Put("/subscriptions/expire", subscription.ExpireSubscriptionsNowHandler(db))
 	//
 	//// Routes for cart
-	//r.Post("/cart", cart.AddToCart(db)) // Same for cart operations
-	//r.Delete("/cart/{id}", cart.RemoveFromCart(db))
-	//r.Put("/cart/update/{id}/{quantity}", cart.UpdateCartItemQuantity(db))
+	r.Post("/cart", cart.AddToCart(db)) // Добавление товара в корзину
+	r.Delete("/cart/{id}", cart.RemoveFromCart(db))
+	r.Put("/cart/update/{id}/{quantity}", cart.UpdateCartItemQuantity(db))
 	//r.Delete("/cart/{id}/byone", cart.RemoveOneItemFromCart(db))
 	//r.Get("/cart/user/{user_id}/products", cart.GetCartByUser(db))
 	//r.Get("/cart/{user_id}/{product_id}", cart.GetCartID(db))

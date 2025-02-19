@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"github.com/go-chi/chi/v5"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"net/http"
 	"strconv"
@@ -15,18 +16,18 @@ import (
 var cartCollection *mongo.Collection
 
 func InitCartCollection(db *mongo.Database) {
-	cartCollection = db.Collection("cart_items")
+	cartCollection = db.Collection("cart")
 }
 
 func AddToCart(db *mongo.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		user, err := config.VerifyJWT(w, r, db)
+		user, err := config.VerifyJWT(w, r, db.Collection("users"))
 		if err != nil || user == nil {
-			return // Ошибка уже обработана в VerifyJWT
+			return
 		}
 
 		var cartItem struct {
-			ProductID string `json:"product_id"` // Преобразуем в строку для MongoDB
+			ProductID string `json:"product_id"`
 			Quantity  int    `json:"quantity"`
 		}
 
@@ -40,17 +41,26 @@ func AddToCart(db *mongo.Database) http.HandlerFunc {
 			return
 		}
 
-		filter := bson.M{"user_id": user.ID, "product_id": cartItem.ProductID}
+		userID := user.ID // ❌ Убрал неправильное преобразование
+		productID, err := primitive.ObjectIDFromHex(cartItem.ProductID)
+		if err != nil {
+			http.Error(w, "Invalid ProductID", http.StatusBadRequest)
+			return
+		}
+
+		filter := bson.M{"user_id": userID, "product_id": productID}
 		var existingCartItem migrations.CartItem
 		err = cartCollection.FindOne(context.TODO(), filter).Decode(&existingCartItem)
 
 		if err == nil {
-			existingCartItem.Quantity += cartItem.Quantity
-			_, err := cartCollection.ReplaceOne(context.TODO(), filter, existingCartItem)
+			// Товар уже в корзине — обновляем количество
+			update := bson.M{"$inc": bson.M{"quantity": cartItem.Quantity}}
+			_, err := cartCollection.UpdateOne(context.TODO(), filter, update)
 			if err != nil {
 				http.Error(w, "Failed to update cart item", http.StatusInternalServerError)
 				return
 			}
+			existingCartItem.Quantity += cartItem.Quantity
 			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(existingCartItem)
 			return
@@ -58,8 +68,9 @@ func AddToCart(db *mongo.Database) http.HandlerFunc {
 
 		if err == mongo.ErrNoDocuments {
 			newCartItem := migrations.CartItem{
-				UserID:    user.ID,
-				ProductID: cartItem.ProductID,
+				ID:        primitive.NewObjectID(),
+				UserID:    userID,
+				ProductID: productID,
 				Quantity:  cartItem.Quantity,
 			}
 
@@ -89,14 +100,13 @@ func UpdateCartItemQuantity(db *mongo.Database) http.HandlerFunc {
 			return
 		}
 
-		filter := bson.M{"_id": cartItemID}
-		var existingCartItem migrations.CartItem
-		err = cartCollection.FindOne(context.TODO(), filter).Decode(&existingCartItem)
+		objectID, err := primitive.ObjectIDFromHex(cartItemID)
 		if err != nil {
-			http.Error(w, "Item not found in cart", http.StatusNotFound)
+			http.Error(w, "Invalid cart item ID", http.StatusBadRequest)
 			return
 		}
 
+		filter := bson.M{"_id": objectID}
 		if newQuantity == 0 {
 			_, err := cartCollection.DeleteOne(context.TODO(), filter)
 			if err != nil {
@@ -108,28 +118,29 @@ func UpdateCartItemQuantity(db *mongo.Database) http.HandlerFunc {
 			return
 		}
 
-		existingCartItem.Quantity = newQuantity
-		_, err = cartCollection.ReplaceOne(context.TODO(), filter, existingCartItem)
+		update := bson.M{"$set": bson.M{"quantity": newQuantity}}
+		_, err = cartCollection.UpdateOne(context.TODO(), filter, update)
 		if err != nil {
 			http.Error(w, "Failed to update cart item quantity", http.StatusInternalServerError)
 			return
 		}
 
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(existingCartItem)
+		json.NewEncoder(w).Encode(map[string]string{"message": "Quantity updated"})
 	}
 }
 
 func RemoveFromCart(db *mongo.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cartItemID := chi.URLParam(r, "id")
-		if cartItemID == "" {
+		objectID, err := primitive.ObjectIDFromHex(cartItemID)
+		if err != nil {
 			http.Error(w, "Invalid cart item ID", http.StatusBadRequest)
 			return
 		}
 
-		filter := bson.M{"_id": cartItemID}
-		_, err := cartCollection.DeleteOne(context.TODO(), filter)
+		filter := bson.M{"_id": objectID}
+		_, err = cartCollection.DeleteOne(context.TODO(), filter)
 		if err != nil {
 			http.Error(w, "Failed to remove item from cart", http.StatusInternalServerError)
 			return

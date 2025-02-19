@@ -10,7 +10,7 @@ const ProductCard = ({ product }) => {
     const handleAddToCart = async () => {
         const userID = localStorage.getItem("userID");
 
-        if (!userID || isNaN(parseInt(userID))) {
+        if (!userID) {
             alert("Please log in to add items to your cart.");
             return;
         }
@@ -20,11 +20,19 @@ const ProductCard = ({ product }) => {
             return;
         }
 
+        if (!product._id) {
+            console.error("Ошибка: product._id отсутствует!");
+            alert("Invalid product ID. Please try again later.");
+            return;
+        }
+
         const cartItem = {
-            user_id: parseInt(userID),
-            product_id: product.ID,
+            user_id: userID,
+            product_id: product._id,
             quantity: 1
         };
+
+        console.log("Отправляем в корзину:", cartItem);
 
         try {
             const response = await fetch("http://localhost:8080/cart", {
@@ -37,7 +45,8 @@ const ProductCard = ({ product }) => {
             });
 
             if (!response.ok) {
-                throw new Error("Failed to add item to cart");
+                const errorText = await response.text();
+                throw new Error(`Failed to add item to cart: ${errorText}`);
             }
 
             alert("Item added to cart!");
@@ -51,7 +60,7 @@ const ProductCard = ({ product }) => {
         if (!window.confirm("Are you sure you want to delete this product?")) return;
 
         try {
-            const response = await fetch(`http://localhost:8080/products/${product.ID}`, {
+            const response = await fetch(`http://localhost:8080/products/${product._id}`, {
                 method: "DELETE",
                 headers: {
                     "Authorization": `Bearer ${token}`,
@@ -59,11 +68,12 @@ const ProductCard = ({ product }) => {
             });
 
             if (!response.ok) {
-                throw new Error("Failed to delete product");
+                const errorText = await response.text();
+                throw new Error(`Failed to delete product: ${errorText}`);
             }
 
             alert("Product deleted successfully!");
-            window.location.reload(); // Refresh the page to update the product list
+            window.location.reload();
         } catch (error) {
             console.error("Error:", error);
             alert("Error deleting product");
@@ -85,8 +95,8 @@ const ProductCard = ({ product }) => {
             </button>
             {userRole === "admin" && (
                 <>
-                    <p className="product-id"><strong>ID:</strong> {product.ID}</p>
-                    <button className="edit-product-button" onClick={() => navigate(`/edit-product/${product.ID}`)}>
+                    <p className="product-id"><strong>ID:</strong> {product._id}</p>
+                    <button className="edit-product-button" onClick={() => navigate(`/edit-product/${product._id}`)}>
                         Edit
                     </button>
                     <button className="delete-product-button" onClick={handleDeleteProduct}>
