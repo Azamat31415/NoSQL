@@ -2,22 +2,26 @@ package subscription
 
 import (
 	"GoProject/migrations"
-	"gorm.io/gorm"
+	"context"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
-	"encoding/json"
 	"github.com/go-chi/chi/v5"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type CreateSubscriptionRequest struct {
-	UserID       uint   `json:"user_id"`
+	UserID       string `json:"user_id"`
 	IntervalDays int    `json:"interval_days"`
 	Type         string `json:"type"`
 	Status       string `json:"status"`
 }
 
-func CreateSubscription(db *gorm.DB) http.HandlerFunc {
+func CreateSubscription(db *mongo.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req CreateSubscriptionRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -25,16 +29,29 @@ func CreateSubscription(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 
-		subscription := migrations.Subscription{
-			UserID:       req.UserID,
-			StartDate:    time.Now(),
-			RenewalDate:  time.Now().AddDate(0, 0, req.IntervalDays),
-			IntervalDays: req.IntervalDays,
-			Type:         req.Type,
-			Status:       req.Status,
+		fmt.Println("Received UserID:", req.UserID) // Логирование
+
+		userID, err := primitive.ObjectIDFromHex(req.UserID)
+		if err != nil {
+			http.Error(w, "Invalid user ID format", http.StatusBadRequest)
+			return
 		}
 
-		if err := db.Create(&subscription).Error; err != nil {
+		subscription := bson.M{
+			"_id":           primitive.NewObjectID(),
+			"user_id":       userID,
+			"start_date":    time.Now(),
+			"renewal_date":  time.Now().AddDate(0, 0, req.IntervalDays),
+			"interval_days": req.IntervalDays,
+			"type":          req.Type,
+			"status":        req.Status,
+			"created_at":    time.Now(),
+			"updated_at":    time.Now(),
+		}
+
+		collection := db.Collection("subscriptions")
+		_, err = collection.InsertOne(context.TODO(), subscription)
+		if err != nil {
 			http.Error(w, "Failed to create subscription", http.StatusInternalServerError)
 			return
 		}
@@ -44,15 +61,18 @@ func CreateSubscription(db *gorm.DB) http.HandlerFunc {
 	}
 }
 
-func DeleteSubscription(db *gorm.DB) http.HandlerFunc {
+func DeleteSubscription(db *mongo.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		subscriptionID := chi.URLParam(r, "id")
-		if subscriptionID == "" {
-			http.Error(w, "Missing subscription ID", http.StatusBadRequest)
+		id, err := primitive.ObjectIDFromHex(subscriptionID)
+		if err != nil {
+			http.Error(w, "Invalid subscription ID", http.StatusBadRequest)
 			return
 		}
 
-		if err := db.Delete(&migrations.Subscription{}, subscriptionID).Error; err != nil {
+		collection := db.Collection("subscriptions")
+		_, err = collection.DeleteOne(context.TODO(), bson.M{"_id": id})
+		if err != nil {
 			http.Error(w, "Failed to delete subscription", http.StatusInternalServerError)
 			return
 		}
@@ -61,10 +81,10 @@ func DeleteSubscription(db *gorm.DB) http.HandlerFunc {
 	}
 }
 
-func HandleSubscriptionPayment(db *gorm.DB) http.HandlerFunc {
+func HandleSubscriptionPayment(db *mongo.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
-			SubscriptionID uint    `json:"subscription_id"`
+			SubscriptionID string  `json:"subscription_id"`
 			Amount         float64 `json:"amount"`
 		}
 
@@ -73,14 +93,25 @@ func HandleSubscriptionPayment(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 
+		subID, err := primitive.ObjectIDFromHex(req.SubscriptionID)
+		if err != nil {
+			http.Error(w, "Invalid subscription ID", http.StatusBadRequest)
+			return
+		}
+
 		payment := migrations.SubscriptionPayment{
-			SubscriptionID: req.SubscriptionID,
+			ID:             primitive.NewObjectID(),
+			SubscriptionID: subID,
 			Amount:         req.Amount,
 			PaymentDate:    time.Now(),
 			Status:         "Paid",
+			CreatedAt:      time.Now(),
+			UpdatedAt:      time.Now(),
 		}
 
-		if err := db.Create(&payment).Error; err != nil {
+		collection := db.Collection("subscription_payments")
+		_, err = collection.InsertOne(context.TODO(), payment)
+		if err != nil {
 			http.Error(w, "Failed to process payment", http.StatusInternalServerError)
 			return
 		}
@@ -90,21 +121,24 @@ func HandleSubscriptionPayment(db *gorm.DB) http.HandlerFunc {
 	}
 }
 
-func GetUserSubscription(db *gorm.DB) http.HandlerFunc {
+func GetUserSubscription(db *mongo.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID := chi.URLParam(r, "user_id")
 		if userID == "" {
-			http.Error(w, "Missing user ID", http.StatusBadRequest)
+			http.Error(w, "User ID is required", http.StatusBadRequest)
 			return
 		}
+
+		collection := db.Collection("subscriptions")
 
 		var subscription migrations.Subscription
-		if err := db.Where("user_id = ?", userID).First(&subscription).Error; err != nil {
-			http.Error(w, "Subscription not found", http.StatusNotFound)
+		err := collection.FindOne(context.TODO(), bson.M{"user_id": userID}).Decode(&subscription)
+		if err != nil {
+			fmt.Println("Subscription not found for user:", userID) // Добавь этот лог
+			http.Error(w, "No active subscription found.", http.StatusNotFound)
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(subscription)
 	}
 }

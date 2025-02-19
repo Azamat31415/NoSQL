@@ -3,6 +3,8 @@ package routes
 import (
 	"GoProject/handlers/auth"
 	"GoProject/handlers/cart"
+	"GoProject/handlers/subscription"
+
 	//"GoProject/handlers/order"
 	//"GoProject/handlers/personal_pet"
 	"GoProject/handlers/product"
@@ -66,12 +68,12 @@ func InitializeRoutes(r *chi.Mux, db *mongo.Database) {
 	//r.Get("/users/{userID}/pets", personal_pet.FetchUserPetByID(db))
 	//
 	//// Routes for subscriptions
-	//r.Post("/subscriptions", subscription.CreateSubscription(db))
-	//r.Delete("/subscriptions/{id}", subscription.DeleteSubscription(db))
-	//r.Put("/subscriptions/{id}/renew", subscription.RenewSubscription(db))
-	//r.Post("/subpayment", subscription.HandleSubscriptionPayment(db))
-	//r.Get("/subscriptions/{user_id}", subscription.GetUserSubscription(db))
-	//r.Put("/subscriptions/expire", subscription.ExpireSubscriptionsNowHandler(db))
+	r.Post("/subscriptions", subscription.CreateSubscription(db))
+	r.Delete("/subscriptions/{id}", subscription.DeleteSubscription(db))
+	r.Put("/subscriptions/{id}/renew", subscription.RenewSubscription(db))
+	r.Post("/subpayment", subscription.HandleSubscriptionPayment(db))
+	r.Get("/subscriptions/{user_id}", subscription.GetUserSubscription(db))
+	r.Put("/subscriptions/expire", subscription.ExpireSubscriptionsNowHandler(db))
 	//
 	//// Routes for cart
 	r.Post("/cart", cart.AddToCart(db)) // Добавление товара в корзину

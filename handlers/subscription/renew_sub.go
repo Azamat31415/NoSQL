@@ -2,16 +2,18 @@ package subscription
 
 import (
 	"GoProject/migrations"
+	"context"
 	"encoding/json"
-	"gorm.io/gorm"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"strconv"
 )
 
-func RenewSubscription(db *gorm.DB) http.HandlerFunc {
+func RenewSubscription(db *mongo.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		subscriptionIDStr := chi.URLParam(r, "id")
 		if subscriptionIDStr == "" {
@@ -19,14 +21,17 @@ func RenewSubscription(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 
-		subscriptionID, err := strconv.ParseUint(subscriptionIDStr, 10, 32)
+		subscriptionID, err := primitive.ObjectIDFromHex(subscriptionIDStr)
 		if err != nil {
 			http.Error(w, "Invalid subscription ID", http.StatusBadRequest)
 			return
 		}
 
+		collection := db.Collection("subscriptions")
+
 		var subscription migrations.Subscription
-		if err := db.First(&subscription, subscriptionID).Error; err != nil {
+		err = collection.FindOne(context.TODO(), bson.M{"_id": subscriptionID}).Decode(&subscription)
+		if err != nil {
 			http.Error(w, "Subscription not found", http.StatusNotFound)
 			return
 		}
@@ -44,10 +49,13 @@ func RenewSubscription(db *gorm.DB) http.HandlerFunc {
 		}
 		subscription.UpdatedAt = now
 
-		if err := db.Model(&subscription).Updates(map[string]interface{}{
-			"renewal_date": subscription.RenewalDate,
-			"updated_at":   subscription.UpdatedAt,
-		}).Error; err != nil {
+		_, err = collection.UpdateOne(
+			context.TODO(),
+			bson.M{"_id": subscriptionID},
+			bson.M{"$set": bson.M{"renewal_date": subscription.RenewalDate, "updated_at": subscription.UpdatedAt}},
+		)
+
+		if err != nil {
 			http.Error(w, "Failed to renew subscription", http.StatusInternalServerError)
 			return
 		}
@@ -57,7 +65,7 @@ func RenewSubscription(db *gorm.DB) http.HandlerFunc {
 	}
 }
 
-func ExpireSubscriptionsNowHandler(db *gorm.DB) http.HandlerFunc {
+func ExpireSubscriptionsNowHandler(db *mongo.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := migrations.ExpireSubscriptionsNow(db)
 		if err != nil {
