@@ -3,7 +3,6 @@ package auth
 import (
 	"GoProject/config"
 	"encoding/json"
-	"fmt"
 	"go.mongodb.org/mongo-driver/mongo"
 	"net/http"
 )
@@ -15,8 +14,6 @@ func ProfileHandler(collection *mongo.Collection) http.HandlerFunc {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
-
-		fmt.Println("User data:", user.Email, user.FirstName, user.LastName, user.Phone)
 
 		response := map[string]interface{}{
 			"email":      user.Email,

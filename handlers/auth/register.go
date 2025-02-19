@@ -4,7 +4,8 @@ import (
 	"GoProject/migrations"
 	"context"
 	"encoding/json"
-	_ "go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"net/http"
 )
@@ -27,13 +28,24 @@ func RegisterHandler(collection *mongo.Collection) http.HandlerFunc {
 			return
 		}
 
+		// Проверка на существующего пользователя
+		var existingUser migrations.User
+		err := collection.FindOne(context.TODO(), bson.M{"email": regData.Email}).Decode(&existingUser)
+		if err == nil {
+			http.Error(w, "User with this email already exists", http.StatusConflict)
+			return
+		}
+
+		// Создание нового пользователя
 		user := migrations.User{
+			ID:        primitive.NewObjectID(),
 			Email:     regData.Email,
 			Password:  regData.Password,
 			FirstName: regData.FirstName,
 			LastName:  regData.LastName,
 			Address:   regData.Address,
 			Phone:     regData.Phone,
+			Role:      "user",
 		}
 
 		if err := user.HashPassword(); err != nil {
@@ -41,7 +53,7 @@ func RegisterHandler(collection *mongo.Collection) http.HandlerFunc {
 			return
 		}
 
-		_, err := collection.InsertOne(context.TODO(), user)
+		_, err = collection.InsertOne(context.TODO(), user)
 		if err != nil {
 			http.Error(w, "Error creating user: "+err.Error(), http.StatusInternalServerError)
 			return

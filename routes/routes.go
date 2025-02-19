@@ -1,7 +1,7 @@
 package routes
 
 import (
-	//"GoProject/handlers/auth"
+	"GoProject/handlers/auth"
 	//"GoProject/handlers/cart"
 	//"GoProject/handlers/order"
 	//"GoProject/handlers/personal_pet"
@@ -33,11 +33,12 @@ func InitializeRoutes(r *chi.Mux, db *mongo.Database) {
 	r.Get("/products/{id}", product.FetchProductByID(db))
 	//
 	//// Routes for authentication
-	//r.Post("/register", auth.RegisterHandler(db))
-	//r.Post("/login", auth.LoginHandler(db))
-	//r.Get("/profile", auth.ProfileHandler(db))
-	//r.Get("/users", auth.GetUsersHandler(db))
-	//
+	r.Post("/register", auth.RegisterHandler(db.Collection("users")))
+	r.Post("/login", auth.LoginHandler(db.Collection("users")))
+	r.Get("/profile", auth.ProfileHandler(db.Collection("users")))
+	//r.Get("/users", auth.GetUsersHandler(db.Collection("users")))
+
+	//np
 	//// Routes for orders
 	//r.Post("/orders", order.CreateOrder(db)) // Change order handlers to work with MongoDB
 	//r.Put("/orders/{id}/status/update", order.UpdateOrderStatus(db))

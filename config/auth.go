@@ -5,6 +5,7 @@ import (
 	"context"
 	"github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"net/http"
 	"strings"
@@ -34,8 +35,17 @@ func VerifyJWT(w http.ResponseWriter, r *http.Request, collection *mongo.Collect
 		return nil, err
 	}
 
-	// Используем user_id как строку
-	userID := claims["user_id"].(string)
+	userIDHex, ok := claims["user_id"].(string)
+	if !ok {
+		http.Error(w, "Invalid user ID in token", http.StatusUnauthorized)
+		return nil, err
+	}
+
+	userID, err := primitive.ObjectIDFromHex(userIDHex)
+	if err != nil {
+		http.Error(w, "Invalid user ID format", http.StatusUnauthorized)
+		return nil, err
+	}
 
 	var user migrations.User
 	err = collection.FindOne(context.TODO(), bson.M{"_id": userID}).Decode(&user)

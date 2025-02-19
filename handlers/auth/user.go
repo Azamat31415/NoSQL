@@ -4,18 +4,17 @@ import (
 	"GoProject/migrations"
 	"context"
 	"encoding/json"
-	"net/http"
-	"strconv"
-
 	"github.com/go-chi/chi/v5"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"net/http"
 )
 
 func GetUserAddress(collection *mongo.Collection) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
-		userID, err := strconv.Atoi(id)
+		userID, err := primitive.ObjectIDFromHex(id)
 		if err != nil {
 			http.Error(w, "Invalid user ID", http.StatusBadRequest)
 			return
