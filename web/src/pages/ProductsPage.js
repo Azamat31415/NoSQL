@@ -16,7 +16,7 @@ const ProductsPage = () => {
                 }
                 return response.json();
             })
-            .then(data => setProducts(data))
+            .then(data => setProducts(data || [])) // <-- добавили fallback []
             .catch(error => setError(error.message))
             .finally(() => setLoading(false));
     }, [category, subcategory, type]);
@@ -62,7 +62,7 @@ const ProductsPage = () => {
         <div className="products-page">
             <h2>Products: {category} - {subcategory} - {type}</h2>
             <div className="product-list">
-                {products.length > 0 ? (
+                {Array.isArray(products) && products.length > 0 ? (
                     products.map((product) => (
                         <ProductCard key={product.ID} product={product} addToCart={addToCart} />
                     ))
