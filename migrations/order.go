@@ -1,30 +1,40 @@
 package migrations
 
 import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"context"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Order represents the structure of an order
 type Order struct {
-	ID             primitive.ObjectID `bson:"_id,omitempty"`             // MongoDB ID (если используется строка ObjectID)
-	UserID         string             `bson:"user_id"`                   // ID пользователя
-	DeliveryMethod string             `bson:"delivery_method"`           // Метод доставки
-	PickupPointID  *string            `bson:"pickup_point_id,omitempty"` // ID точки самовывоза (если есть)
-	Address        *string            `bson:"address,omitempty"`         // Адрес (если есть)
-	Status         string             `bson:"status"`                    // Статус заказа
-	TotalPrice     float64            `bson:"total_price"`               // Общая цена
-	CreatedAt      time.Time          `bson:"created_at"`                // Дата создания
-	UpdatedAt      time.Time          `bson:"updated_at"`                // Дата обновления
-	OrderItems     []OrderItem        `bson:"order_items"`               // Список товаров в заказе
+	ID             primitive.ObjectID  `bson:"_id,omitempty" json:"id"`
+	UserID         primitive.ObjectID  `bson:"user_id" json:"user_id"`
+	DeliveryMethod string              `bson:"delivery_method" json:"delivery_method"`
+	PickupPointID  *primitive.ObjectID `bson:"pickup_point_id,omitempty" json:"pickup_point_id,omitempty"`
+	Address        *string             `bson:"address,omitempty" json:"address,omitempty"`
+	Status         string              `bson:"status" json:"status"`
+	TotalPrice     float64             `bson:"total_price" json:"total_price"`
+	CreatedAt      time.Time           `bson:"created_at" json:"created_at"`
+	UpdatedAt      time.Time           `bson:"updated_at" json:"updated_at"`
+	OrderItems     []OrderItem         `bson:"order_items" json:"order_items"`
 }
 
-// OrderItem represents an item in an order
 type OrderItem struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty"` // MongoDB ID
-	OrderID   primitive.ObjectID `bson:"order_id"`      // ID заказа
-	ProductID string             `bson:"product_id"`    // ID продукта
-	Quantity  int                `bson:"quantity"`      // Количество
-	Price     float64            `bson:"price"`         // Цена за единицу
-	CreatedAt time.Time          `bson:"created_at"`    // Дата добавления товара
+	ProductID primitive.ObjectID `bson:"product_id" json:"product_id"`
+	Quantity  int                `bson:"quantity" json:"quantity"`
+	Price     float64            `bson:"price" json:"price"`
+	CreatedAt time.Time          `bson:"created_at" json:"created_at"`
+}
+
+func MigrateOrder(db *mongo.Database) error {
+	collection := db.Collection("orders")
+	_, err := collection.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
+		Keys:    bson.M{"user_id": 1},
+		Options: options.Index().SetUnique(false),
+	})
+	return err
 }

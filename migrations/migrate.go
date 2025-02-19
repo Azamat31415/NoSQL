@@ -1,10 +1,8 @@
 package migrations
 
-import (
-	"gorm.io/gorm"
-)
+import "go.mongodb.org/mongo-driver/mongo"
 
-func MigrateAll(db *gorm.DB) error {
+func MigrateAll(db *mongo.Database) error {
 	if err := MigrateUser(db); err != nil {
 		return err
 	}

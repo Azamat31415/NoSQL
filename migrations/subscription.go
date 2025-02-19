@@ -1,34 +1,47 @@
 package migrations
 
 import (
-	"gorm.io/gorm"
+	"context"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Subscription struct {
-	ID           uint `gorm:"primaryKey"`
-	UserID       uint
-	StartDate    time.Time
-	RenewalDate  time.Time
-	IntervalDays int
-	Type         string `gorm:"type:varchar(20)"`
-	Status       string `gorm:"type:varchar(20)"`
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	UserID       primitive.ObjectID `bson:"user_id" json:"user_id"`
+	StartDate    time.Time          `bson:"start_date" json:"start_date"`
+	RenewalDate  time.Time          `bson:"renewal_date" json:"renewal_date"`
+	IntervalDays int                `bson:"interval_days" json:"interval_days"`
+	Type         string             `bson:"type" json:"type"`
+	Status       string             `bson:"status" json:"status"`
+	CreatedAt    time.Time          `bson:"created_at" json:"created_at"`
+	UpdatedAt    time.Time          `bson:"updated_at" json:"updated_at"`
 }
 
-func MigrateSubscription(db *gorm.DB) error {
-	return db.AutoMigrate(&Subscription{})
+func MigrateSubscription(db *mongo.Database) error {
+	collection := db.Collection("subscriptions")
+
+	_, err := collection.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
+		Keys:    bson.M{"user_id": 1},
+		Options: nil,
+	})
+	return err
 }
 
-func ExpireSubscriptionsNow(db *gorm.DB) error {
+func ExpireSubscriptionsNow(db *mongo.Database) error {
 	now := time.Now()
-	result := db.Model(&Subscription{}).
-		Where("renewal_date < ? AND status = ?", now, "active").
-		Update("status", "expired")
+	collection := db.Collection("subscriptions")
 
-	if result.Error != nil {
-		return result.Error
-	}
-	return nil
+	_, err := collection.UpdateMany(
+		context.TODO(),
+		bson.M{
+			"renewal_date": bson.M{"$lt": now},
+			"status":       "active",
+		},
+		bson.M{"$set": bson.M{"status": "expired"}},
+	)
+	return err
 }

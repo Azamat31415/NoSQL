@@ -1,7 +1,7 @@
 package cart
 
 import (
-	"GoProject/configs"
+	"GoProject/config"
 	"GoProject/migrations"
 	"context"
 	"encoding/json"

@@ -1,51 +1,54 @@
 package main
 
 import (
-	"GoProject/configs"
+	"GoProject/config"
 	"GoProject/migrations"
 	"GoProject/routes"
+	"context"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/cors"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"net/http"
 	"time"
 )
 
 // Background goroutine to check expired subscriptions
-func checkExpiredSubscriptions(db *gorm.DB) {
+func checkExpiredSubscriptions(db *mongo.Database) {
 	for {
 		time.Sleep(24 * time.Hour)
 
 		now := time.Now()
-		result := db.Model(&migrations.Subscription{}).
-			Where("renewal_date < ? AND status = ?", now, "active").
-			Update("status", "expired")
 
-		if result.Error != nil {
-			log.Println("Error updating subscriptions:", result.Error)
-		} else if result.RowsAffected > 0 {
-			log.Printf("Updated %d subscriptions: status changed to 'expired'", result.RowsAffected)
+		// MongoDB query to find expired subscriptions
+		filter := bson.M{"renewal_date": bson.M{"$lt": now}, "status": "active"}
+		update := bson.M{"$set": bson.M{"status": "expired"}}
+
+		// Update all matching subscriptions
+		_, err := db.Collection("subscriptions").UpdateMany(context.TODO(), filter, update)
+		if err != nil {
+			log.Println("Error updating subscriptions:", err)
+		} else {
+			log.Println("Expired subscriptions updated.")
 		}
 	}
 }
 
 func main() {
-	// Database connection settings
-	dsn := config.GetDSN()
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	// Connect to MongoDB
+	db, err := config.GetMongoDB()
 	if err != nil {
-		log.Fatal("Failed to connect to the database:", err)
+		log.Fatal("Failed to connect to MongoDB:", err)
 	}
 
-	// Run migrations
+	// Run migrations (if needed for MongoDB)
 	if err := migrations.MigrateAll(db); err != nil {
 		log.Fatal("Failed to apply migrations:", err)
 	}
 
-	// Assign admin role
+	// Assign admin role (if required)
 	if err := migrations.AssignAdminRole(db); err != nil {
 		log.Printf("Failed to assign admin role: %v", err)
 	} else {
@@ -58,7 +61,7 @@ func main() {
 	// Initialize chi router
 	r := chi.NewRouter()
 
-	// CORS
+	// CORS settings
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -68,12 +71,13 @@ func main() {
 		MaxAge:           300,
 	})
 
+	// Use CORS middleware
 	r.Use(c.Handler)
 
-	// Initialize routes
+	// Initialize routes with MongoDB connection
 	routes.InitializeRoutes(r, db)
 
-	// Start server
+	// Start the server
 	port := ":8080"
 	fmt.Printf("Server running at http://localhost%s\n", port)
 	log.Fatal(http.ListenAndServe(port, r))

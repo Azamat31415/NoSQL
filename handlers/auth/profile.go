@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"GoProject/configs"
+	"GoProject/config"
 	"encoding/json"
 	"fmt"
 	"go.mongodb.org/mongo-driver/mongo"

@@ -1,25 +1,30 @@
 package migrations
 
 import (
-	"gorm.io/gorm"
+	"context"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// PickupPoint model for pickup points
 type PickupPoint struct {
-	ID           uint    `gorm:"primaryKey"`
-	Name         string  `gorm:"type:varchar(255);not null"`
-	Address      string  `gorm:"type:text;not null"`
-	City         string  `gorm:"type:varchar(100);not null"`
-	Latitude     float64 `gorm:"type:double precision;not null"`
-	Longitude    float64 `gorm:"type:double precision;not null"`
-	Phone        string  `gorm:"type:varchar(20)"`
-	WorkingHours string  `gorm:"type:varchar(100)"`
+	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Name         string             `bson:"name" json:"name"`
+	Address      string             `bson:"address" json:"address"`
+	City         string             `bson:"city" json:"city"`
+	Latitude     float64            `bson:"latitude" json:"latitude"`
+	Longitude    float64            `bson:"longitude" json:"longitude"`
+	Phone        string             `bson:"phone,omitempty" json:"phone,omitempty"`
+	WorkingHours string             `bson:"working_hours,omitempty" json:"working_hours,omitempty"`
 }
 
-// MigratePickupPoint for creation of pickup point table
-func MigratePickupPoint(db *gorm.DB) error {
-	if err := db.AutoMigrate(&PickupPoint{}, &Order{}); err != nil {
-		return err
-	}
-	return nil
+func MigratePickupPoint(db *mongo.Database) error {
+	collection := db.Collection("pickup_points")
+	_, err := collection.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
+		Keys:    bson.M{"city": 1},
+		Options: options.Index().SetUnique(false),
+	})
+	return err
 }
