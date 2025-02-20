@@ -8,7 +8,11 @@ const ProductCard = ({ product }) => {
     const token = localStorage.getItem("token");
 
     const handleAddToCart = async () => {
-        const userID = localStorage.getItem("userID");
+        const userID = Number(localStorage.getItem("userID"));  // 🔥 Исправлено
+        const token = localStorage.getItem("token");
+
+        console.log("Отправляемый токен:", token);
+        console.log("Отправляемый userID:", userID);  // Теперь точно число!
 
         if (!userID) {
             alert("Please log in to add items to your cart.");
@@ -20,15 +24,15 @@ const ProductCard = ({ product }) => {
             return;
         }
 
-        if (!product._id) {
-            console.error("Ошибка: product._id отсутствует!");
+        if (!product.id) {
+            console.error("Ошибка: product.id отсутствует!", product);
             alert("Invalid product ID. Please try again later.");
             return;
         }
 
         const cartItem = {
-            user_id: userID,
-            product_id: product._id,
+            user_id: userID,  // Теперь это число
+            product_id: product.id,
             quantity: 1
         };
 
@@ -59,14 +63,14 @@ const ProductCard = ({ product }) => {
     const handleDeleteProduct = async () => {
         if (!window.confirm("Are you sure you want to delete this product?")) return;
 
-        if (!product.id) {
+        if (!product.id) { // Исправлено
             console.error("Ошибка: product.id отсутствует!");
             alert("Invalid product ID. Please try again later.");
             return;
         }
 
         try {
-            const response = await fetch(`http://localhost:8080/products/${product.id}`, { // Используем product.id
+            const response = await fetch(`http://localhost:8080/products/${product.id}`, { // Исправлено
                 method: "DELETE",
                 headers: {
                     "Authorization": `Bearer ${token}`,
