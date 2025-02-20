@@ -9,19 +9,19 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// AssignAdminRole проверяет и обновляет роль пользователя
+// AssignAdminRole checks and updates the user's role
 func AssignAdminRole(db *mongo.Database) error {
 	collection := db.Collection("users")
 	email := "azabraza061005@gmail.com"
 
 	ctx := context.TODO()
 
-	// Проверяем, есть ли пользователь
+	// Check if the user exists
 	var user User
 	err := collection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
 
 	if err == mongo.ErrNoDocuments {
-		// Создаём нового пользователя с ролью "admin"
+		// Create a new user with the "admin" role
 		adminUser := User{
 			ID:        primitive.NewObjectID(),
 			Email:     email,
@@ -31,17 +31,17 @@ func AssignAdminRole(db *mongo.Database) error {
 			Role:      "admin",
 		}
 		if err := adminUser.HashPassword(); err != nil {
-			return fmt.Errorf("ошибка хеширования пароля: %v", err)
+			return fmt.Errorf("error hashing password: %v", err)
 		}
 
 		_, err := collection.InsertOne(ctx, adminUser)
 		if err != nil {
-			return fmt.Errorf("ошибка создания администратора: %v", err)
+			return fmt.Errorf("error creating admin: %v", err)
 		}
-		fmt.Println("Администратор создан.")
+		fmt.Println("Admin user created.")
 		return nil
 	} else if err != nil {
-		return fmt.Errorf("ошибка при поиске пользователя: %v", err)
+		return fmt.Errorf("error finding user: %v", err)
 	}
 
 	_, err = collection.UpdateOne(ctx,
@@ -49,9 +49,9 @@ func AssignAdminRole(db *mongo.Database) error {
 		bson.M{"$set": bson.M{"role": "admin"}},
 	)
 	if err != nil {
-		return fmt.Errorf("ошибка обновления роли пользователя: %v", err)
+		return fmt.Errorf("error updating user role: %v", err)
 	}
 
-	fmt.Println("Роль пользователя обновлена до admin.")
+	fmt.Println("User role updated to admin.")
 	return nil
 }

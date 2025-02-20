@@ -8,10 +8,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"log"
 	"net/http"
 )
 
-// ProductResponse — формат для JSON-ответа (чтобы ObjectID был строкой)
 type ProductResponse struct {
 	ID          string  `json:"id"`
 	Name        string  `json:"name"`
@@ -27,21 +27,21 @@ func AddProduct(db *mongo.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var product migrations.Product
 		if err := json.NewDecoder(r.Body).Decode(&product); err != nil {
+			log.Println("Ошибка декодирования JSON:", err)
 			http.Error(w, "Invalid input", http.StatusBadRequest)
 			return
 		}
 
-		// Генерируем новый ObjectID
 		product.ID = primitive.NewObjectID()
 
 		collection := db.Collection("products")
 		_, err := collection.InsertOne(context.Background(), product)
 		if err != nil {
+			log.Println("Ошибка при добавлении продукта в базу:", err)
 			http.Error(w, "Failed to create product", http.StatusInternalServerError)
 			return
 		}
 
-		// Форматируем ответ
 		response := ProductResponse{
 			ID:          product.ID.Hex(),
 			Name:        product.Name,
@@ -59,7 +59,6 @@ func AddProduct(db *mongo.Database) http.HandlerFunc {
 	}
 }
 
-// EditProduct — обновляет продукт
 func EditProduct(db *mongo.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
@@ -76,7 +75,6 @@ func EditProduct(db *mongo.Database) http.HandlerFunc {
 			return
 		}
 
-		// Убираем пустые поля из обновления
 		updateData := bson.M{}
 		for key, value := range updatedProduct {
 			if value != "" && value != 0 {
@@ -107,7 +105,6 @@ func EditProduct(db *mongo.Database) http.HandlerFunc {
 	}
 }
 
-// DeleteProduct удаляет продукт по ID
 func DeleteProduct(db *mongo.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
@@ -130,17 +127,14 @@ func DeleteProduct(db *mongo.Database) http.HandlerFunc {
 	}
 }
 
-// FetchAllProducts — получает список всех продуктов
 func FetchAllProducts(db *mongo.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		collection := db.Collection("products")
 
-		// Получаем параметры запроса
 		category := r.URL.Query().Get("category")
 		subcategory := r.URL.Query().Get("subcategory")
 		productType := r.URL.Query().Get("type")
 
-		// Формируем фильтр
 		filter := bson.M{}
 		if category != "" {
 			filter["category"] = category
@@ -152,7 +146,6 @@ func FetchAllProducts(db *mongo.Database) http.HandlerFunc {
 			filter["type"] = productType
 		}
 
-		// Запрос в MongoDB с фильтром
 		cursor, err := collection.Find(context.Background(), filter)
 		if err != nil {
 			http.Error(w, "Error fetching products", http.StatusInternalServerError)
@@ -166,7 +159,6 @@ func FetchAllProducts(db *mongo.Database) http.HandlerFunc {
 			return
 		}
 
-		// Форматируем JSON-ответ
 		var formattedProducts []ProductResponse
 		for _, p := range products {
 			formattedProducts = append(formattedProducts, ProductResponse{
@@ -187,7 +179,6 @@ func FetchAllProducts(db *mongo.Database) http.HandlerFunc {
 	}
 }
 
-// FetchProductByID — получает продукт по ID
 func FetchProductByID(db *mongo.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
@@ -207,7 +198,6 @@ func FetchProductByID(db *mongo.Database) http.HandlerFunc {
 			return
 		}
 
-		// Форматируем ответ
 		response := ProductResponse{
 			ID:          product.ID.Hex(),
 			Name:        product.Name,
