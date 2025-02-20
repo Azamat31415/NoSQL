@@ -41,13 +41,14 @@ func AddToCart(db *mongo.Database) http.HandlerFunc {
 			return
 		}
 
-		userID := user.ID // ❌ Убрал неправильное преобразование
+		userID := user.ID
 		productID, err := primitive.ObjectIDFromHex(cartItem.ProductID)
 		if err != nil {
 			http.Error(w, "Invalid ProductID", http.StatusBadRequest)
 			return
 		}
 
+		cartCollection := db.Collection("cart")
 		filter := bson.M{"user_id": userID, "product_id": productID}
 		var existingCartItem migrations.CartItem
 		err = cartCollection.FindOne(context.TODO(), filter).Decode(&existingCartItem)
@@ -148,5 +149,102 @@ func RemoveFromCart(db *mongo.Database) http.HandlerFunc {
 
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]string{"message": "Item permanently removed from cart"})
+	}
+}
+
+func GetCartByUser(db *mongo.Database) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID := chi.URLParam(r, "user_id")
+
+		objectID, err := primitive.ObjectIDFromHex(userID)
+		if err != nil {
+			http.Error(w, "Invalid user ID", http.StatusBadRequest)
+			return
+		}
+
+		pipeline := []bson.M{
+			{"$match": bson.M{"user_id": objectID}},
+			{"$lookup": bson.M{
+				"from":         "products",
+				"localField":   "product_id",
+				"foreignField": "_id",
+				"as":           "product",
+			}},
+			{"$unwind": "$product"},
+		}
+
+		cursor, err := cartCollection.Aggregate(context.TODO(), pipeline)
+		if err != nil {
+			http.Error(w, "Failed to fetch cart items", http.StatusInternalServerError)
+			return
+		}
+		defer cursor.Close(context.TODO())
+
+		var cartItems []bson.M
+		if err = cursor.All(context.TODO(), &cartItems); err != nil {
+			http.Error(w, "Failed to decode cart items", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(cartItems)
+	}
+}
+
+func RemoveOneItemFromCart(db *mongo.Database) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		cartItemID := chi.URLParam(r, "id")
+		objectID, err := primitive.ObjectIDFromHex(cartItemID)
+		if err != nil {
+			http.Error(w, "Invalid cart item ID", http.StatusBadRequest)
+			return
+		}
+
+		// Уменьшаем количество на 1
+		update := bson.M{"$inc": bson.M{"quantity": -1}}
+		result, err := cartCollection.UpdateOne(context.TODO(), bson.M{"_id": objectID}, update)
+		if err != nil || result.ModifiedCount == 0 {
+			http.Error(w, "Failed to update quantity", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{"message": "Item quantity decreased"})
+	}
+}
+
+func GetCartID(db *mongo.Database) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID := chi.URLParam(r, "user_id")
+		productID := chi.URLParam(r, "product_id")
+
+		userObjectID, err := primitive.ObjectIDFromHex(userID)
+		if err != nil {
+			http.Error(w, "Invalid user ID", http.StatusBadRequest)
+			return
+		}
+
+		productObjectID, err := primitive.ObjectIDFromHex(productID)
+		if err != nil {
+			http.Error(w, "Invalid product ID", http.StatusBadRequest)
+			return
+		}
+
+		var cartItem migrations.CartItem
+		err = cartCollection.FindOne(context.TODO(), bson.M{
+			"user_id":    userObjectID,
+			"product_id": productObjectID,
+		}).Decode(&cartItem)
+
+		if err == mongo.ErrNoDocuments {
+			http.Error(w, "Cart item not found", http.StatusNotFound)
+			return
+		} else if err != nil {
+			http.Error(w, "Database error", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(cartItem)
 	}
 }

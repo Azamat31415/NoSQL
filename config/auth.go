@@ -30,7 +30,7 @@ func VerifyJWT(w http.ResponseWriter, r *http.Request, collection *mongo.Collect
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
+	if !ok || token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
 		http.Error(w, "Invalid token claims", http.StatusUnauthorized)
 		return nil, err
 	}
@@ -54,5 +54,8 @@ func VerifyJWT(w http.ResponseWriter, r *http.Request, collection *mongo.Collect
 		return nil, err
 	}
 
-	return &user, nil
+	return &migrations.User{
+		ID:    userID,
+		Email: user.Email,
+	}, nil
 }

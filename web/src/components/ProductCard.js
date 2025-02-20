@@ -8,7 +8,7 @@ const ProductCard = ({ product }) => {
     const token = localStorage.getItem("token");
 
     const handleAddToCart = async () => {
-        const userID = Number(localStorage.getItem("userID"));  // 🔥 Исправлено
+        const userID = localStorage.getItem("userID");
         const token = localStorage.getItem("token");
 
         console.log("Отправляемый токен:", token);
