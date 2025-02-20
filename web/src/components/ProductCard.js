@@ -59,8 +59,14 @@ const ProductCard = ({ product }) => {
     const handleDeleteProduct = async () => {
         if (!window.confirm("Are you sure you want to delete this product?")) return;
 
+        if (!product.id) {
+            console.error("Ошибка: product.id отсутствует!");
+            alert("Invalid product ID. Please try again later.");
+            return;
+        }
+
         try {
-            const response = await fetch(`http://localhost:8080/products/${product._id}`, {
+            const response = await fetch(`http://localhost:8080/products/${product.id}`, { // Используем product.id
                 method: "DELETE",
                 headers: {
                     "Authorization": `Bearer ${token}`,
@@ -95,8 +101,8 @@ const ProductCard = ({ product }) => {
             </button>
             {userRole === "admin" && (
                 <>
-                    <p className="product-id"><strong>ID:</strong> {product._id}</p>
-                    <button className="edit-product-button" onClick={() => navigate(`/edit-product/${product._id}`)}>
+                    <p className="product-id"><strong>ID:</strong> {product.id || "N/A"}</p>
+                    <button className="edit-product-button" onClick={() => navigate(`/edit-product/${product.id}`)}>
                         Edit
                     </button>
                     <button className="delete-product-button" onClick={handleDeleteProduct}>

@@ -3,17 +3,25 @@ import { useParams, useNavigate } from "react-router-dom";
 import "./edit.css";
 
 const EditProduct = () => {
-    const { id } = useParams();
+    const { id } = useParams(); // id из URL
     const navigate = useNavigate();
-    const [product, setProduct] = useState({ name: "", description: "", price: "", image: "" });
+    const [product, setProduct] = useState({
+        name: "",
+        description: "",
+        price: "",
+        image: "",
+    });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
         fetch(`http://localhost:8080/products/${id}`)
-            .then(response => response.json())
-            .then(data => setProduct(data))
-            .catch(error => setError("Failed to load product"))
+            .then((response) => {
+                if (!response.ok) throw new Error("Failed to load product");
+                return response.json();
+            })
+            .then((data) => setProduct(data))
+            .catch((error) => setError(error.message))
             .finally(() => setLoading(false));
     }, [id]);
 
@@ -25,7 +33,12 @@ const EditProduct = () => {
         e.preventDefault();
         const token = localStorage.getItem("token");
 
-        fetch(`http://localhost:8080/products/${id}`, {
+        if (!product.id) {
+            alert("Invalid product ID. Please try again later.");
+            return;
+        }
+
+        fetch(`http://localhost:8080/products/${product.id}`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
@@ -33,7 +46,7 @@ const EditProduct = () => {
             },
             body: JSON.stringify(product),
         })
-            .then(response => {
+            .then((response) => {
                 if (!response.ok) {
                     throw new Error("Failed to update product");
                 }
@@ -43,7 +56,7 @@ const EditProduct = () => {
                 alert("Product updated successfully");
                 navigate("/admin-panel");
             })
-            .catch(error => alert(error.message));
+            .catch((error) => alert(error.message));
     };
 
     if (loading) return <p>Loading...</p>;
@@ -66,7 +79,9 @@ const EditProduct = () => {
                     <input type="number" name="price" value={product.price} onChange={handleChange} required />
                 </label>
                 <button type="submit">Save Changes</button>
-                <button type="button" onClick={() => navigate("/admin-panel")}>Cancel</button>
+                <button type="button" onClick={() => navigate("/admin-panel")}>
+                    Cancel
+                </button>
             </form>
         </div>
     );

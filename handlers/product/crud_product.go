@@ -135,7 +135,25 @@ func FetchAllProducts(db *mongo.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		collection := db.Collection("products")
 
-		cursor, err := collection.Find(context.Background(), bson.M{})
+		// Получаем параметры запроса
+		category := r.URL.Query().Get("category")
+		subcategory := r.URL.Query().Get("subcategory")
+		productType := r.URL.Query().Get("type")
+
+		// Формируем фильтр
+		filter := bson.M{}
+		if category != "" {
+			filter["category"] = category
+		}
+		if subcategory != "" {
+			filter["subcategory"] = subcategory
+		}
+		if productType != "" {
+			filter["type"] = productType
+		}
+
+		// Запрос в MongoDB с фильтром
+		cursor, err := collection.Find(context.Background(), filter)
 		if err != nil {
 			http.Error(w, "Error fetching products", http.StatusInternalServerError)
 			return
@@ -148,7 +166,7 @@ func FetchAllProducts(db *mongo.Database) http.HandlerFunc {
 			return
 		}
 
-		// Форматируем JSON-ответ (конвертируем ObjectID в строку)
+		// Форматируем JSON-ответ
 		var formattedProducts []ProductResponse
 		for _, p := range products {
 			formattedProducts = append(formattedProducts, ProductResponse{
