@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"net/http"
+	"time"
 )
 
 func GetUserAddress(collection *mongo.Collection) http.HandlerFunc {
@@ -37,5 +38,31 @@ func GetUserAddress(collection *mongo.Collection) http.HandlerFunc {
 		if err := json.NewEncoder(w).Encode(response); err != nil {
 			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 		}
+	}
+}
+
+// GetUsersHandler retrieves all users from the MongoDB collection
+func GetUsersHandler(usersCollection *mongo.Collection) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		// Query all users from MongoDB
+		cursor, err := usersCollection.Find(ctx, bson.M{})
+		if err != nil {
+			http.Error(w, "Failed to fetch users", http.StatusInternalServerError)
+			return
+		}
+		defer cursor.Close(ctx)
+
+		var users []bson.M
+		if err := cursor.All(ctx, &users); err != nil {
+			http.Error(w, "Error processing user data", http.StatusInternalServerError)
+			return
+		}
+
+		// Send JSON response with users
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(users)
 	}
 }

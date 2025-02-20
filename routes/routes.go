@@ -38,7 +38,7 @@ func InitializeRoutes(r *chi.Mux, db *mongo.Database) {
 	r.Post("/register", auth.RegisterHandler(db.Collection("users")))
 	r.Post("/login", auth.LoginHandler(db.Collection("users")))
 	r.Get("/profile", auth.ProfileHandler(db.Collection("users")))
-	//r.Get("/users", auth.GetUsersHandler(db.Collection("users")))
+	r.Get("/users", auth.GetUsersHandler(db.Collection("users")))
 
 	//// Routes for orders
 	//r.Post("/orders", order.CreateOrder(db)) // Change order handlers to work with MongoDB

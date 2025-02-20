@@ -100,7 +100,9 @@ const AdminPanel = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (response.ok) {
-                const data = await response.json();
+                let data = await response.json();
+                // Преобразуем _id в строку для корректного отображения
+                data = data.map(user => ({ ...user, id: user.id || user._id }));
                 setUsers(data);
             } else {
                 alert("Failed to fetch users");
@@ -240,10 +242,10 @@ const AdminPanel = () => {
                 alert("Order status updated successfully");
                 setOrders(prevOrders =>
                     prevOrders.map(order =>
-                        order.ID === orderId ? { ...order, Status: newStatus } : order
+                        (order.id === orderId || order._id === orderId) ? { ...order, status: newStatus } : order
                     )
                 );
-            }else {
+            } else {
                 alert("Failed to update order status");
             }
         } catch (error) {
@@ -262,17 +264,17 @@ const AdminPanel = () => {
                         <h3>Orders</h3>
                         <div className="orders-grid">
                             {orders.map(order => (
-                                <div key={order.ID} className="order-card">
-                                    <p><strong>Order ID:</strong> {order.ID}</p>
-                                    <p><strong>User ID:</strong> {order.UserID}</p>
-                                    <p><strong>Delivery:</strong> {order.DeliveryMethod}</p>
-                                    <p><strong>Address:</strong> {order.Address}</p>
-                                    <p><strong>Status:</strong> {order.Status}</p>
-                                    <p><strong>Total:</strong> ${order.TotalPrice.toFixed(2)}</p>
+                                <div key={order.id || order._id} className="order-card">
+                                    <p><strong>Order ID:</strong> {order.id || order._id}</p>
+                                    <p><strong>User ID:</strong> {order.user_id}</p>
+                                    <p><strong>Delivery:</strong> {order.delivery_method}</p>
+                                    <p><strong>Address:</strong> {order.address}</p>
+                                    <p><strong>Status:</strong> {order.status}</p>
+                                    <p><strong>Total:</strong> ${order.total_price?.toFixed(2)}</p>
 
                                     <select
-                                        onChange={(e) => handleStatusChange(order.ID, e.target.value.toLowerCase())}
-                                        defaultValue={order.Status.toLowerCase()}
+                                        onChange={(e) => handleStatusChange(order.id || order._id, e.target.value.toLowerCase())}
+                                        defaultValue={order.status.toLowerCase()}
                                     >
                                         {orderStatuses.map(status => (
                                             <option key={status} value={status}>{status}</option>
@@ -361,20 +363,18 @@ const AdminPanel = () => {
                                 <th>Phone</th>
                                 <th>Address</th>
                                 <th>Role</th>
-                                <th>Created At</th>
                             </tr>
                             </thead>
                             <tbody>
                             {users.map(user => (
-                                <tr key={user.ID}>
-                                    <td>{user.ID}</td>
-                                    <td>{user.Email}</td>
-                                    <td>{user.FirstName}</td>
-                                    <td>{user.LastName}</td>
-                                    <td>{user.Phone}</td>
-                                    <td>{user.Address}</td>
-                                    <td>{user.Role}</td>
-                                    <td>{new Date(user.CreatedAt).toLocaleDateString()}</td>
+                                <tr key={user.id}>
+                                    <td>{user.id}</td>
+                                    <td>{user.email}</td>
+                                    <td>{user.first_name}</td>
+                                    <td>{user.last_name}</td>
+                                    <td>{user.phone}</td>
+                                    <td>{user.address}</td>
+                                    <td>{user.role}</td>
                                 </tr>
                             ))}
                             </tbody>
